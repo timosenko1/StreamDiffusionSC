@@ -28,11 +28,7 @@ base_model = "stabilityai/sd-turbo"
 taesd_model = "madebyollin/taesd"
 
 # Default prompts
-default_prompt = (
-    "Portrait of The Joker halloween costume, face painting, with , glare pose, "
-    "detailed, intricate, full of colour, cinematic lighting, trending on artstation, "
-    "8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
-)
+default_prompt = "good_twenty_guy as a guy with light hair and blue eyes, wearing a fitted brown quilted jacket, a teal-blue scarf, and tan utility pants, paired with sturdy high-cut boots. Both his arms are cybernetic, featuring sleek metallic designs with blue accents"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated, pixel art, low quality, low fidelity"
 
 # Page content for frontend
@@ -132,6 +128,7 @@ class Pipeline:
             vae_id=None,
             acceleration=args.acceleration,
             mode="img2img",
+            lora_dict={"/home/ubuntu/kairon.safetensors": 1.0},
             use_denoising_batch=True,
             cfg_type="none",
             use_safety_checker=args.safety_checker,
