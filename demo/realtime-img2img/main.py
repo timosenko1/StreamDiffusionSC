@@ -1,5 +1,3 @@
-# main.py
-
 from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +12,7 @@ import time
 from types import SimpleNamespace
 import asyncio
 import os
+import time
 import mimetypes
 import torch
 
@@ -61,7 +60,7 @@ class App:
 
         async def handle_websocket_data(user_id: uuid.UUID):
             if not self.conn_manager.check_user(user_id):
-                raise HTTPException(status_code=404, detail="User not found")
+                return HTTPException(status_code=404, detail="User not found")
             last_time = time.time()
             try:
                 while True:
@@ -80,7 +79,10 @@ class App:
                         return
                     data = await self.conn_manager.receive_json(user_id)
                     if data["status"] == "next_frame":
-                        info = self.pipeline.Info()
+                        info = pipeline.Info()
+                        params = await self.conn_manager.receive_json(user_id)
+                        params = pipeline.InputParams(**params)
+                        params = SimpleNamespace(**params.dict())
                         if info.input_mode == "image":
                             image_data = await self.conn_manager.receive_bytes(
                                 user_id
@@ -90,17 +92,8 @@ class App:
                                     user_id, {"status": "send_frame"}
                                 )
                                 continue
-                            image = bytes_to_pil(image_data)
-                            # Create InputParams with local parameters
-                            params = self.pipeline.InputParams(
-                                image=image
-                                # Parameters are set to their default values as defined in img2img.py
-                            )
-                            # Convert Pydantic model to SimpleNamespace for processing
-                            params_ns = SimpleNamespace(**params.dict())
-                            await self.conn_manager.update_data(
-                                user_id, params_ns
-                            )
+                            params.image = bytes_to_pil(image_data)
+                        await self.conn_manager.update_data(user_id, params)
 
             except Exception as e:
                 logging.error(f"Websocket Error: {e}, {user_id} ")
@@ -126,7 +119,7 @@ class App:
                         )
                         if params is None:
                             continue
-                        image = self.pipeline.predict(params)
+                        image = pipeline.predict(params)
                         if image is None:
                             continue
                         frame = pil_to_frame(image)
@@ -146,17 +139,16 @@ class App:
         # route to setup frontend
         @self.app.get("/api/settings")
         async def settings():
-            info_schema = self.pipeline.Info.schema()
-            info = self.pipeline.Info()
+            info_schema = pipeline.Info.schema()
+            info = pipeline.Info()
             if info.page_content:
                 page_content = markdown2.markdown(info.page_content)
 
-            # Use InputParamsBase for schema to exclude the 'image' field
-            input_params_schema = self.pipeline.InputParamsBase.schema()
+            input_params = pipeline.InputParams.schema()
             return JSONResponse(
                 {
                     "info": info_schema,
-                    "input_params": input_params_schema,
+                    "input_params": input_params,
                     "max_queue_size": self.args.max_queue_size,
                     "page_content": page_content if info.page_content else "",
                 }
