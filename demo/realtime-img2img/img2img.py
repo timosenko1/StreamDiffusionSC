@@ -128,7 +128,7 @@ class Pipeline:
             vae_id=None,
             acceleration=args.acceleration,
             mode="img2img",
-            lora_dict={"/home/ubuntu/kairon.safetensors": 1.0},
+            lora_dict={"/home/ubuntu/kairon_sdxl.safetensors": 1.0},
             use_denoising_batch=True,
             cfg_type="none",
             use_safety_checker=args.safety_checker,
