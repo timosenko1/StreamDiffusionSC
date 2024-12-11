@@ -2,6 +2,9 @@
 
 import sys
 import os
+from typing import Optional
+import io
+import base64
 
 # Adjust the system path to include the parent directories
 sys.path.append(
@@ -31,6 +34,14 @@ taesd_model = "madebyollin/taesd"
 default_prompt = "good_twenty_guy as a guy with light hair and blue eyes, wearing a fitted brown quilted jacket, a teal-blue scarf, and tan utility pants, paired with sturdy high-cut boots. Both his arms are cybernetic, featuring sleek metallic designs with blue accents"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated, pixel art, low quality, low fidelity"
 
+# Default Parameters (Adjust these locally as needed)
+LOCAL_GUIDANCE_SCALE = 1.2
+LOCAL_NOISE_AMOUNT = 0.0
+LOCAL_GRAYSCALE = False
+LOCAL_CONTROLNET_MODE = "none"  # Options: "none", "canny", "depth"
+LOCAL_WIDTH = 512
+LOCAL_HEIGHT = 512
+
 # Page content for frontend
 page_content = """<h1 class="text-3xl font-bold">StreamDiffusion Sonce DEMO</h1>
 <h3 class="text-xl font-bold">Image-to-Image SD-Turbo</h3>
@@ -49,7 +60,7 @@ class Pipeline:
         input_mode: str = "image"
         page_content: str = page_content
 
-    class InputParams(BaseModel):
+    class InputParamsBase(BaseModel):
         prompt: str = Field(
             default_prompt,
             title="Prompt",
@@ -57,7 +68,7 @@ class Pipeline:
             id="prompt",
         )
         guidance_scale: float = Field(
-            1.2,
+            LOCAL_GUIDANCE_SCALE,
             title="Guidance Scale",
             description="Controls how strongly the image follows the prompt.",
             ge=0.0,
@@ -65,7 +76,7 @@ class Pipeline:
             id="guidance_scale",
         )
         noise_amount: float = Field(
-            0.0,
+            LOCAL_NOISE_AMOUNT,
             title="Noise Amount",
             description="Amount of noise to add to the input image.",
             ge=0.0,
@@ -73,35 +84,37 @@ class Pipeline:
             id="noise_amount",
         )
         grayscale: bool = Field(
-            False,
+            LOCAL_GRAYSCALE,
             title="Grayscale",
             description="Convert input image to grayscale.",
             id="grayscale",
         )
         controlnet_mode: ControlNetMode = Field(
-            ControlNetMode.none,
+            LOCAL_CONTROLNET_MODE,
             title="ControlNet Mode",
             description="Select ControlNet preprocessing mode.",
             id="controlnet_mode",
         )
         width: int = Field(
-            512,
-            min=2,
-            max=2048,
+            LOCAL_WIDTH,
+            ge=2,
+            le=2048,
             title="Width",
             disabled=True,
             hide=True,
             id="width",
         )
         height: int = Field(
-            512,
-            min=2,
-            max=2048,
+            LOCAL_HEIGHT,
+            ge=2,
+            le=2048,
             title="Height",
             disabled=True,
             hide=True,
             id="height",
         )
+
+    class InputParams(InputParamsBase):
         image: Image.Image = Field(
             ...,  # This field will be provided during runtime
             title="Input Image",
@@ -109,10 +122,15 @@ class Pipeline:
             id="image",
         )
 
+        class Config:
+            arbitrary_types_allowed = (
+                True  # Allow arbitrary types like PIL.Image.Image
+            )
+
     def __init__(
         self, args: Args, device: torch.device, torch_dtype: torch.dtype
     ):
-        params = self.InputParams()
+        params = self.InputParamsBase()
         self.stream = StreamDiffusionWrapper(
             model_id_or_path=base_model,
             use_tiny_vae=args.taesd,
@@ -142,7 +160,7 @@ class Pipeline:
             prompt=default_prompt,
             negative_prompt=default_negative_prompt,
             num_inference_steps=50,
-            guidance_scale=1.2,
+            guidance_scale=LOCAL_GUIDANCE_SCALE,
         )
 
     def preprocess_image(
