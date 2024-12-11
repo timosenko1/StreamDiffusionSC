@@ -4,10 +4,15 @@ import os
 sys.path.append(
     os.path.join(
         os.path.dirname(__file__),
-@@ -12,37 +15,38 @@
+        "..",
+        "..",
+    )
+)
+
 from utils.wrapper import StreamDiffusionWrapper
 
 import torch
+
 from config import Args
 from pydantic import BaseModel, Field
 from PIL import Image
@@ -41,7 +46,13 @@ Image to Image pipeline using
 class Pipeline:
     class Info(BaseModel):
         name: str = "StreamDiffusion img2img"
-@@ -56,20 +60,62 @@ class InputParams(BaseModel):
+        input_mode: str = "image"
+        page_content: str = page_content
+
+    class InputParams(BaseModel):
+        prompt: str = Field(
+            default_prompt,
+            title="Prompt",
             field="textarea",
             id="prompt",
         )
@@ -52,17 +63,56 @@ class Pipeline:
         #     id="negative_prompt",
         # )
         width: int = Field(
-            512, min=2, max=15, title="Width", disabled=True, hide=True, id="width"
+            512,
+            min=2,
+            max=15,
+            title="Width",
+            disabled=True,
+            hide=True,
+            id="width",
         )
         height: int = Field(
-            512, min=2, max=15, title="Height", disabled=True, hide=True, id="height"
+            512,
+            min=2,
+            max=15,
+            title="Height",
+            disabled=True,
+            hide=True,
+            id="height",
         )
 
-    def __init__(self, args: Args, device: torch.device, torch_dtype: torch.dtype):
+    def __init__(
+        self, args: Args, device: torch.device, torch_dtype: torch.dtype
+    ):
         params = self.InputParams()
         self.stream = StreamDiffusionWrapper(
             model_id_or_path=base_model,
-@@ -102,8 +148,106 @@ def __init__(self, args: Args, device: torch.device, torch_dtype: torch.dtype):
+            use_tiny_vae=args.taesd,
+            device=device,
+            dtype=torch_dtype,
+            t_index_list=[35, 45],
+            frame_buffer_size=1,
+            width=params.width,
+            height=params.height,
+            use_lcm_lora=False,
+            output_type="pil",
+            warmup=10,
+            vae_id=None,
+            acceleration=args.acceleration,
+            mode="img2img",
+            use_denoising_batch=True,
+            cfg_type="none",
+            use_safety_checker=args.safety_checker,
+            # enable_similar_image_filter=True,
+            # similar_image_filter_threshold=0.98,
+            engine_dir=args.engine_dir,
+        )
+
+        self.last_prompt = default_prompt
+        self.stream.prepare(
+            prompt=default_prompt,
+            negative_prompt=default_negative_prompt,
+            num_inference_steps=50,
             guidance_scale=1.2,
         )
 
