@@ -78,7 +78,7 @@ class Pipeline:
             use_tiny_vae=args.taesd,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[32, 45],
+            t_index_list=[45],
             frame_buffer_size=1,
             lora_dict={
                 "/home/ubuntu/ComfyUI/models/loras/jinx_15.safetensors": 1.0
