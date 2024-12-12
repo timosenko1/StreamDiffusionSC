@@ -85,7 +85,7 @@ class Pipeline:
             },
             width=params.width,
             height=params.height,
-            use_lcm_lora=False,
+            use_lcm_lora=True,
             output_type="pil",
             warmup=10,
             vae_id=None,
