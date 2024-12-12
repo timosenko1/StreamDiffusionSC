@@ -113,7 +113,7 @@ class Pipeline:
         # 'noise' - Add Gaussian noise
         # 'grayscale' - Convert to grayscale
         # 'canny' - Apply Canny edge detection
-        self.preprocessing_mode = "grayscale"  # Change this to desired mode
+        self.preprocessing_mode = "none"  # Change this to desired mode
 
         # Parameters for preprocessing
         self.noise_level = 50  # Adjust the noise level (0-255)
