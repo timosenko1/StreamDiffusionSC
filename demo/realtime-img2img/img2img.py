@@ -21,7 +21,6 @@ from PIL import Image
 import math
 
 base_model = "KBlueLeaf/kohaku-v2.1"
-base_model = "gxkok/starlight-xl-animated-v3"
 taesd_model = "madebyollin/taesd"
 
 default_prompt = "good_twenty_guy as a guy with light hair and blue eyes, wearing a fitted brown quilted jacket, a teal-blue scarf, and tan utility pants, paired with sturdy high-cut boots. Both his arms are cybernetic, featuring sleek metallic designs with blue accents"
