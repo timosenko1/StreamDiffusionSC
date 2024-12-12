@@ -78,9 +78,11 @@ class Pipeline:
             use_tiny_vae=args.taesd,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[35, 45],
+            t_index_list=[0, 16, 32, 45],
             frame_buffer_size=1,
-            lora_dict={"/home/ubuntu/kairon_sdxl.safetensors": 1.0},
+            lora_dict={
+                "/home/ubuntu/ComfyUI/models/loras/jinx_15.safetensors": 1.0
+            },
             width=params.width,
             height=params.height,
             use_lcm_lora=False,
