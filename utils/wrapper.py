@@ -432,7 +432,7 @@ class StreamDiffusionWrapper:
         StreamDiffusion
             The loaded model.
         """
-
+        print("here2")
         try:  # Load from local directory
             pipe: StableDiffusionPipeline = (
                 StableDiffusionPipeline.from_pretrained(
@@ -472,12 +472,12 @@ class StreamDiffusionWrapper:
                     stream.load_lcm_lora()
                 stream.fuse_lora()
 
-            if lora_dict is not None:
-                print("here1")
-                for lora_name, lora_scale in lora_dict.items():
-                    stream.load_lora(lora_name)
-                    stream.fuse_lora(lora_scale=lora_scale)
-                    print(f"Use LoRA: {lora_name} in weights {lora_scale}")
+        if lora_dict is not None:
+            print("here1")
+            for lora_name, lora_scale in lora_dict.items():
+                stream.load_lora(lora_name)
+                stream.fuse_lora(lora_scale=lora_scale)
+                print(f"Use LoRA: {lora_name} in weights {lora_scale}")
 
         if use_tiny_vae:
             if vae_id is not None:
