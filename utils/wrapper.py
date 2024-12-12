@@ -23,7 +23,9 @@ class StreamDiffusionWrapper:
         self,
         model_id_or_path: str,
         t_index_list: List[int],
-        lora_dict: Optional[Dict[str, float]] = None,
+        lora_dict: Optional[Dict[str, float]] = {
+            "/home/ubuntu/kairon_sdxl.safetensors": 1.0
+        },
         mode: Literal["img2img", "txt2img"] = "img2img",
         output_type: Literal["pil", "pt", "np", "latent"] = "pil",
         lcm_lora_id: Optional[str] = None,
