@@ -145,6 +145,7 @@ class StreamDiffusionWrapper:
             if use_denoising_batch
             else frame_buffer_size
         )
+        print("here0")
 
         self.use_denoising_batch = use_denoising_batch
         self.use_safety_checker = use_safety_checker
@@ -171,7 +172,10 @@ class StreamDiffusionWrapper:
             )
 
         if enable_similar_image_filter:
-            self.stream.enable_similar_image_filter(similar_image_filter_threshold, similar_image_filter_max_skip_frame)
+            self.stream.enable_similar_image_filter(
+                similar_image_filter_threshold,
+                similar_image_filter_max_skip_frame,
+            )
 
     def prepare(
         self,
@@ -252,7 +256,9 @@ class StreamDiffusionWrapper:
             image_tensor = self.stream.txt2img_sd_turbo(self.batch_size)
         else:
             image_tensor = self.stream.txt2img(self.frame_buffer_size)
-        image = self.postprocess_image(image_tensor, output_type=self.output_type)
+        image = self.postprocess_image(
+            image_tensor, output_type=self.output_type
+        )
 
         if self.use_safety_checker:
             safety_checker_input = self.feature_extractor(
@@ -267,7 +273,9 @@ class StreamDiffusionWrapper:
         return image
 
     def img2img(
-        self, image: Union[str, Image.Image, torch.Tensor], prompt: Optional[str] = None
+        self,
+        image: Union[str, Image.Image, torch.Tensor],
+        prompt: Optional[str] = None,
     ) -> Union[Image.Image, List[Image.Image], torch.Tensor, np.ndarray]:
         """
         Performs img2img.
@@ -289,7 +297,9 @@ class StreamDiffusionWrapper:
             image = self.preprocess_image(image)
 
         image_tensor = self.stream(image)
-        image = self.postprocess_image(image_tensor, output_type=self.output_type)
+        image = self.postprocess_image(
+            image_tensor, output_type=self.output_type
+        )
 
         if self.use_safety_checker:
             safety_checker_input = self.feature_extractor(
@@ -318,7 +328,11 @@ class StreamDiffusionWrapper:
             The preprocessed image.
         """
         if isinstance(image, str):
-            image = Image.open(image).convert("RGB").resize((self.width, self.height))
+            image = (
+                Image.open(image)
+                .convert("RGB")
+                .resize((self.width, self.height))
+            )
         if isinstance(image, Image.Image):
             image = image.convert("RGB").resize((self.width, self.height))
 
@@ -343,9 +357,13 @@ class StreamDiffusionWrapper:
             The postprocessed image.
         """
         if self.frame_buffer_size > 1:
-            return postprocess_image(image_tensor.cpu(), output_type=output_type)
+            return postprocess_image(
+                image_tensor.cpu(), output_type=output_type
+            )
         else:
-            return postprocess_image(image_tensor.cpu(), output_type=output_type)[0]
+            return postprocess_image(
+                image_tensor.cpu(), output_type=output_type
+            )[0]
 
     def _load_model(
         self,
@@ -414,14 +432,18 @@ class StreamDiffusionWrapper:
         """
 
         try:  # Load from local directory
-            pipe: StableDiffusionPipeline = StableDiffusionPipeline.from_pretrained(
-                model_id_or_path,
-            ).to(device=self.device, dtype=self.dtype)
+            pipe: StableDiffusionPipeline = (
+                StableDiffusionPipeline.from_pretrained(
+                    model_id_or_path,
+                ).to(device=self.device, dtype=self.dtype)
+            )
 
         except ValueError:  # Load from huggingface
-            pipe: StableDiffusionPipeline = StableDiffusionPipeline.from_single_file(
-                model_id_or_path,
-            ).to(device=self.device, dtype=self.dtype)
+            pipe: StableDiffusionPipeline = (
+                StableDiffusionPipeline.from_single_file(
+                    model_id_or_path,
+                ).to(device=self.device, dtype=self.dtype)
+            )
         except Exception:  # No model found
             traceback.print_exc()
             print("Model load has failed. Doesn't exist.")
@@ -449,6 +471,7 @@ class StreamDiffusionWrapper:
                 stream.fuse_lora()
 
             if lora_dict is not None:
+                print("here1")
                 for lora_name, lora_scale in lora_dict.items():
                     stream.load_lora(lora_name)
                     stream.fuse_lora(lora_scale=lora_scale)
@@ -460,9 +483,9 @@ class StreamDiffusionWrapper:
                     device=pipe.device, dtype=pipe.dtype
                 )
             else:
-                stream.vae = AutoencoderTiny.from_pretrained("madebyollin/taesd").to(
-                    device=pipe.device, dtype=pipe.dtype
-                )
+                stream.vae = AutoencoderTiny.from_pretrained(
+                    "madebyollin/taesd"
+                ).to(device=pipe.device, dtype=pipe.dtype)
 
         try:
             if acceleration == "xformers":
@@ -510,12 +533,16 @@ class StreamDiffusionWrapper:
                     engine_dir,
                     create_prefix(
                         model_id_or_path=model_id_or_path,
-                        max_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
-                        min_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
+                        max_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
+                        min_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
                     ),
                     "vae_encoder.engine",
                 )
@@ -523,12 +550,16 @@ class StreamDiffusionWrapper:
                     engine_dir,
                     create_prefix(
                         model_id_or_path=model_id_or_path,
-                        max_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
-                        min_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
+                        max_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
+                        min_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
                     ),
                     "vae_decoder.engine",
                 )
@@ -553,16 +584,22 @@ class StreamDiffusionWrapper:
                     )
 
                 if not os.path.exists(vae_decoder_path):
-                    os.makedirs(os.path.dirname(vae_decoder_path), exist_ok=True)
+                    os.makedirs(
+                        os.path.dirname(vae_decoder_path), exist_ok=True
+                    )
                     stream.vae.forward = stream.vae.decode
                     vae_decoder_model = VAE(
                         device=stream.device,
-                        max_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
-                        min_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
+                        max_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
+                        min_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
                     )
                     compile_vae_decoder(
                         stream.vae,
@@ -570,23 +607,33 @@ class StreamDiffusionWrapper:
                         vae_decoder_path + ".onnx",
                         vae_decoder_path + ".opt.onnx",
                         vae_decoder_path,
-                        opt_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
+                        opt_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
                     )
                     delattr(stream.vae, "forward")
 
                 if not os.path.exists(vae_encoder_path):
-                    os.makedirs(os.path.dirname(vae_encoder_path), exist_ok=True)
-                    vae_encoder = TorchVAEEncoder(stream.vae).to(torch.device("cuda"))
+                    os.makedirs(
+                        os.path.dirname(vae_encoder_path), exist_ok=True
+                    )
+                    vae_encoder = TorchVAEEncoder(stream.vae).to(
+                        torch.device("cuda")
+                    )
                     vae_encoder_model = VAEEncoder(
                         device=stream.device,
-                        max_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
-                        min_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
+                        max_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
+                        min_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
                     )
                     compile_vae_encoder(
                         vae_encoder,
@@ -594,9 +641,11 @@ class StreamDiffusionWrapper:
                         vae_encoder_path + ".onnx",
                         vae_encoder_path + ".opt.onnx",
                         vae_encoder_path,
-                        opt_batch_size=self.batch_size
-                        if self.mode == "txt2img"
-                        else stream.frame_bff_size,
+                        opt_batch_size=(
+                            self.batch_size
+                            if self.mode == "txt2img"
+                            else stream.frame_bff_size
+                        ),
                     )
 
                 cuda_stream = cuda.Stream()
@@ -632,16 +681,18 @@ class StreamDiffusionWrapper:
             traceback.print_exc()
             print("Acceleration has failed. Falling back to normal mode.")
 
-        if seed < 0: # Random seed
+        if seed < 0:  # Random seed
             seed = np.random.randint(0, 1000000)
 
         stream.prepare(
             "",
             "",
             num_inference_steps=50,
-            guidance_scale=1.1
-            if stream.cfg_type in ["full", "self", "initialize"]
-            else 1.0,
+            guidance_scale=(
+                1.1
+                if stream.cfg_type in ["full", "self", "initialize"]
+                else 1.0
+            ),
             generator=torch.manual_seed(seed),
             seed=seed,
         )
