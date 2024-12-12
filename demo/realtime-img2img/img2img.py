@@ -21,6 +21,7 @@ from PIL import Image
 import math
 
 base_model = "KBlueLeaf/kohaku-v2.1"
+base_model = "gxkok/starlight-xl-animated-v3"
 taesd_model = "madebyollin/taesd"
 
 default_prompt = "good_twenty_guy as a guy with light hair and blue eyes, wearing a fitted brown quilted jacket, a teal-blue scarf, and tan utility pants, paired with sturdy high-cut boots. Both his arms are cybernetic, featuring sleek metallic designs with blue accents"
@@ -80,12 +81,10 @@ class Pipeline:
             dtype=torch_dtype,
             t_index_list=[35, 45],
             frame_buffer_size=1,
-            lora_dict={
-                "/home/ubuntu/ComfyUI/models/loras/jinx_15.safetensors": 1.0
-            },
+            lora_dict={"/home/ubuntu/kairon_sdxl.safetensors": 1.0},
             width=params.width,
             height=params.height,
-            use_lcm_lora=True,
+            use_lcm_lora=False,
             output_type="pil",
             warmup=10,
             vae_id=None,
