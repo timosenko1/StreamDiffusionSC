@@ -20,9 +20,7 @@ from pydantic import BaseModel, Field
 from PIL import Image
 import math
 
-base_model = (
-    "/home/ubuntu/ComfyUI/models/checkpoints/kairon_merged_00001_.safetensors"
-)
+base_model = "/home/ubuntu/ComfyUI/models/checkpoints/kairon_turbo_merged_00001_.safetensors"
 taesd_model = "madebyollin/taesd"
 
 default_prompt = "kairon, boy, light hair and blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style"

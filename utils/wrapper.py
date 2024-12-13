@@ -433,7 +433,7 @@ class StreamDiffusionWrapper:
         """
         try:  # Load from local directory
             pipe: StableDiffusionPipeline = (
-                StableDiffusionPipeline.from_pretrained(
+                StableDiffusionPipeline.from_single_file(
                     model_id_or_path,
                 ).to(device=self.device, dtype=self.dtype)
             )
