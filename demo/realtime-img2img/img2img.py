@@ -20,10 +20,12 @@ from pydantic import BaseModel, Field
 from PIL import Image
 import math
 
-base_model = "KBlueLeaf/kohaku-v2.1"
+base_model = (
+    "/home/ubuntu/ComfyUI/models/checkpoints/kairon_merged_00001_.safetensors"
+)
 taesd_model = "madebyollin/taesd"
 
-default_prompt = "good_twenty_guy as a guy with light hair and blue eyes, wearing a fitted brown quilted jacket, a teal-blue scarf, and tan utility pants, paired with sturdy high-cut boots. Both his arms are cybernetic, featuring sleek metallic designs with blue accents"
+default_prompt = "kairon, boy, light hair and blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
 
 page_content = """<h1 class="text-3xl font-bold">StreamDiffusion Sonce DEMO</h1>
@@ -75,17 +77,14 @@ class Pipeline:
         params = self.InputParams()
         self.stream = StreamDiffusionWrapper(
             model_id_or_path=base_model,
-            use_tiny_vae=args.taesd,
+            use_tiny_vae=False,  # args.taesd,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[35, 40],
+            t_index_list=[35, 45],
             frame_buffer_size=1,
-            lora_dict={
-                "/home/ubuntu/ComfyUI/models/loras/jinx_15.safetensors": 1.0
-            },
             width=params.width,
             height=params.height,
-            use_lcm_lora=True,
+            use_lcm_lora=False,
             output_type="pil",
             warmup=10,
             vae_id=None,
