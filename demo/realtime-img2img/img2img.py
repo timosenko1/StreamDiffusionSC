@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from PIL import Image
 import math
 
-base_model = "/home/ubuntu/ComfyUI/models/checkpoints/kairon_turbo_merged_00001_.safetensors"
+base_model = "/home/ubuntu/sdxl-turbo"
 taesd_model = "madebyollin/taesd"
 
 default_prompt = "kairon, boy, light hair and blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style"
@@ -75,7 +75,7 @@ class Pipeline:
         params = self.InputParams()
         self.stream = StreamDiffusionWrapper(
             model_id_or_path=base_model,
-            use_tiny_vae=False,  # args.taesd,
+            use_tiny_vae=args.taesd,
             device=device,
             dtype=torch_dtype,
             t_index_list=[35, 45],
