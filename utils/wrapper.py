@@ -6,7 +6,11 @@ from typing import List, Literal, Optional, Union, Dict
 
 import numpy as np
 import torch
-from diffusers import AutoencoderTiny, StableDiffusionPipeline
+from diffusers import (
+    AutoencoderTiny,
+    StableDiffusionPipeline,
+    StableDiffusionXLPipeline,
+)
 from PIL import Image
 
 from streamdiffusion import StreamDiffusion
@@ -432,8 +436,8 @@ class StreamDiffusionWrapper:
             The loaded model.
         """
         try:  # Load from local directory
-            pipe: StableDiffusionPipeline = (
-                StableDiffusionPipeline.from_single_file(
+            pipe: StableDiffusionXLPipeline = (
+                StableDiffusionXLPipeline.from_single_file(
                     model_id_or_path,
                 ).to(device=self.device, dtype=self.dtype)
             )
