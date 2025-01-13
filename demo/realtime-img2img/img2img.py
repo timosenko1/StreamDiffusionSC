@@ -20,6 +20,9 @@ import math
 
 base_model = "stabilityai/sd-turbo"
 taesd_model = "madebyollin/taesd"
+lcm_model = "home/ubuntu/dreamshaper_lcm.safetensors"
+lora_dict = {"/home/ubuntu/lcm_kairon.safetensors": 1.0}
+# lora_dict = {"/home/ubuntu/kairon_15.safetensors":1.0}
 
 default_prompt = "Portrait of The Joker halloween costume, face painting, with , glare pose, detailed, intricate, full of colour, cinematic lighting, trending on artstation, 8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
@@ -63,23 +66,38 @@ class Pipeline:
         #     id="negative_prompt",
         # )
         width: int = Field(
-            512, min=2, max=15, title="Width", disabled=True, hide=True, id="width"
+            512,
+            min=2,
+            max=15,
+            title="Width",
+            disabled=True,
+            hide=True,
+            id="width",
         )
         height: int = Field(
-            512, min=2, max=15, title="Height", disabled=True, hide=True, id="height"
+            512,
+            min=2,
+            max=15,
+            title="Height",
+            disabled=True,
+            hide=True,
+            id="height",
         )
 
-    def __init__(self, args: Args, device: torch.device, torch_dtype: torch.dtype):
+    def __init__(
+        self, args: Args, device: torch.device, torch_dtype: torch.dtype
+    ):
         params = self.InputParams()
         self.stream = StreamDiffusionWrapper(
-            model_id_or_path=base_model,
+            model_id_or_path=lcm_model,
             use_tiny_vae=args.taesd,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[35, 45],
+            t_index_list=[0, 16, 32, 45],
             frame_buffer_size=1,
             width=params.width,
             height=params.height,
+            lora_dict=lora_dict,
             use_lcm_lora=False,
             output_type="pil",
             warmup=10,
