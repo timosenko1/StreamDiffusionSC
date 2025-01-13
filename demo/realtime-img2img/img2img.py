@@ -24,7 +24,7 @@ lcm_model = "/home/ubuntu/dreamshaper_lcm.safetensors"
 # lora_dict = {"/home/ubuntu/lcm_kairon.safetensors": 1.0}
 lora_dict = {"/home/ubuntu/kairon_15.safetensors": 1.0}
 
-default_prompt = "Portrait of The Joker halloween costume, face painting, with , glare pose, detailed, intricate, full of colour, cinematic lighting, trending on artstation, 8k, hyperrealistic, focused, extreme details, unreal engine 5 cinematic, masterpiece"
+default_prompt = "kairon, 1boy, white hair, blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style, solo"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
 
 page_content = """<h1 class="text-3xl font-bold">StreamDiffusion</h1>
