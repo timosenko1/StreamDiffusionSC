@@ -25,7 +25,7 @@ lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
 lora_dict = {"/home/ubuntu/models/last.safetensors": 1.0}
 
 default_prompt = "kairon, 1boy, white hair, blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style, solo"
-default_negative_prompt = "black and white, blurry, low resolution, pixelated,  pixel art, low quality, low fidelity"
+default_negative_prompt = "black and white, blurry, low resolution, pixelated, pixel art, low quality, low fidelity"
 
 page_content = """<h1 class="text-3xl font-bold">StreamDiffusion</h1>
 <h3 class="text-xl font-bold">Image-to-Image SD-Turbo</h3>
@@ -93,7 +93,7 @@ class Pipeline:
             use_tiny_vae=True,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[32, 40, 45],
+            t_index_list=[25, 32, 40, 45],
             frame_buffer_size=1,
             width=params.width,
             height=params.height,
