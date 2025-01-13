@@ -90,10 +90,10 @@ class Pipeline:
         params = self.InputParams()
         self.stream = StreamDiffusionWrapper(
             model_id_or_path=lcm_model,
-            use_tiny_vae=False,
+            use_tiny_vae=True,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[0, 16, 32, 45],
+            t_index_list=[32, 45],
             frame_buffer_size=1,
             width=params.width,
             height=params.height,
@@ -105,7 +105,7 @@ class Pipeline:
             acceleration=args.acceleration,
             mode="img2img",
             use_denoising_batch=True,
-            cfg_type="none",
+            cfg_type="self",
             use_safety_checker=args.safety_checker,
             # enable_similar_image_filter=True,
             # similar_image_filter_threshold=0.98,
