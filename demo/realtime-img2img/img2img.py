@@ -90,7 +90,7 @@ class Pipeline:
         params = self.InputParams()
         self.stream = StreamDiffusionWrapper(
             model_id_or_path=lcm_model,
-            use_tiny_vae=args.taesd,
+            use_tiny_vae=False,
             device=device,
             dtype=torch_dtype,
             t_index_list=[0, 16, 32, 45],
