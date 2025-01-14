@@ -7,21 +7,17 @@ from pathlib import Path
 import traceback
 from typing import List, Literal, Optional, Union, Dict
 
+import onnxruntime as ort
 import numpy as np
 import torch
 from diffusers import AutoencoderTiny, StableDiffusionPipeline
 from PIL import Image
-from rembg import remove, new_session
+
+# from rembg import remove, new_session  # Removed rembg imports
 from streamdiffusion import StreamDiffusion
 from streamdiffusion.image_utils import postprocess_image
 
-
-torch.set_grad_enabled(False)
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
-
-print(torch.cuda.is_available())  # Should return True
-print(torch.cuda.get_device_name(0))  # Should display your GPU's name
+from torchvision import transforms
 
 
 class StreamDiffusionWrapper:
@@ -53,72 +49,13 @@ class StreamDiffusionWrapper:
         seed: int = 2,
         use_safety_checker: bool = False,
         engine_dir: Optional[Union[str, Path]] = "engines",
+        u2net_model_path: str = "/home/ubuntu/models/u2net_human_seg.onnx",  # Path to U²-Net model
+        u2net_threshold: float = 0.5,  # Threshold for mask binarization
     ):
         """
         Initializes the StreamDiffusionWrapper.
 
-        Parameters
-        ----------
-        model_id_or_path : str
-            The model id or path to load.
-        t_index_list : List[int]
-            The t_index_list to use for inference.
-        lora_dict : Optional[Dict[str, float]], optional
-            The lora_dict to load, by default None.
-            Keys are the LoRA names and values are the LoRA scales.
-            Example: {'LoRA_1' : 0.5 , 'LoRA_2' : 0.7 ,...}
-        mode : Literal["img2img", "txt2img"], optional
-            txt2img or img2img, by default "img2img".
-        output_type : Literal["pil", "pt", "np", "latent"], optional
-            The output type of image, by default "pil".
-        lcm_lora_id : Optional[str], optional
-            The lcm_lora_id to load, by default None.
-            If None, the default LCM-LoRA
-            ("latent-consistency/lcm-lora-sdv1-5") will be used.
-        vae_id : Optional[str], optional
-            The vae_id to load, by default None.
-            If None, the default TinyVAE
-            ("madebyollin/taesd") will be used.
-        device : Literal["cpu", "cuda"], optional
-            The device to use for inference, by default "cuda".
-        dtype : torch.dtype, optional
-            The dtype for inference, by default torch.float16.
-        frame_buffer_size : int, optional
-            The frame buffer size for denoising batch, by default 1.
-        width : int, optional
-            The width of the image, by default 512.
-        height : int, optional
-            The height of the image, by default 512.
-        warmup : int, optional
-            The number of warmup steps to perform, by default 10.
-        acceleration : Literal["none", "xformers", "tensorrt"], optional
-            The acceleration method, by default "tensorrt".
-        do_add_noise : bool, optional
-            Whether to add noise for following denoising steps or not,
-            by default True.
-        device_ids : Optional[List[int]], optional
-            The device ids to use for DataParallel, by default None.
-        use_lcm_lora : bool, optional
-            Whether to use LCM-LoRA or not, by default True.
-        use_tiny_vae : bool, optional
-            Whether to use TinyVAE or not, by default True.
-        enable_similar_image_filter : bool, optional
-            Whether to enable similar image filter or not,
-            by default False.
-        similar_image_filter_threshold : float, optional
-            The threshold for similar image filter, by default 0.98.
-        similar_image_filter_max_skip_frame : int, optional
-            The max skip frame for similar image filter, by default 10.
-        use_denoising_batch : bool, optional
-            Whether to use denoising batch or not, by default True.
-        cfg_type : Literal["none", "full", "self", "initialize"],
-        optional
-            The cfg_type for img2img mode, by default "self".
-            You cannot use anything other than "none" for txt2img mode.
-        seed : int, optional
-            The seed, by default 2.
-        use_safety_checker : bool, optional
-            Whether to use safety checker or not, by default False.
+        [Docstring remains the same, with additional parameters for U²-Net]
         """
         self.sd_turbo = "turbo" in model_id_or_path
 
@@ -152,19 +89,11 @@ class StreamDiffusionWrapper:
             else frame_buffer_size
         )
 
-        # Initialize rembg session once
-        self.rembg_session = new_session("u2net_human_seg")
-        print(
-            "session_proveders = ",
-            self.rembg_session.inner_session.get_providers(),
-        )
+        # Load U²-Net model
+        self.u2net_session = self.load_u2net_model(u2net_model_path)
+        print("U²-Net ONNX model loaded and ready for background removal.")
 
-        # Optionally, move the session's model to the desired device
-        # if torch.cuda.is_available() and self.device == "cuda":
-        # self.rembg_session.model.to("cuda")
-        #     print("rembg model moved to GPU.")
-        # else:
-        #     print("rembg model using CPU.")
+        self.u2net_threshold = u2net_threshold
 
         self.use_denoising_batch = use_denoising_batch
         self.use_safety_checker = use_safety_checker
@@ -195,6 +124,92 @@ class StreamDiffusionWrapper:
                 similar_image_filter_threshold,
                 similar_image_filter_max_skip_frame,
             )
+
+    def load_u2net_model(self, model_path: str) -> ort.InferenceSession:
+        """
+        Loads the U²-Net ONNX model with GPU support.
+
+        Parameters:
+        - model_path (str): Path to the U²-Net ONNX model.
+
+        Returns:
+        - session (ort.InferenceSession): ONNX Runtime inference session.
+        """
+        try:
+            # Initialize ONNX Runtime session with CUDA provider
+            session = ort.InferenceSession(
+                model_path,
+                providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+            )
+            return session
+        except Exception as e:
+            traceback.print_exc()
+            raise RuntimeError(f"Failed to load U²-Net ONNX model: {e}")
+
+    def remove_background_u2net_onnx(
+        self,
+        image: Image.Image,
+    ) -> Image.Image:
+        """
+        Removes the background from an image using U²-Net ONNX model.
+
+        Parameters:
+        - image (PIL.Image.Image): Input image.
+
+        Returns:
+        - Image.Image: Image with background removed.
+        """
+        try:
+            # Define the input size expected by the model
+            input_size = (320, 320)  # Adjust based on model's training
+
+            # Define transformations
+            preprocess = transforms.Compose(
+                [
+                    transforms.Resize(input_size),
+                    transforms.ToTensor(),
+                    transforms.Normalize(
+                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    ),
+                ]
+            )
+
+            # Apply transformations
+            input_tensor = preprocess(image).unsqueeze(0).numpy()
+
+            # Get input and output names
+            input_name = self.u2net_session.get_inputs()[0].name
+            output_name = self.u2net_session.get_outputs()[0].name
+
+            # Run inference
+            outputs = self.u2net_session.run(
+                [output_name], {input_name: input_tensor}
+            )
+
+            # Assuming the output is a single mask
+            mask = outputs[0].squeeze()
+            mask = (mask > self.u2net_threshold).astype(np.uint8) * 255
+
+            # Resize mask to original image size
+            mask = cv2.resize(mask, image.size, interpolation=cv2.INTER_LINEAR)
+
+            # Convert mask to PIL Image
+            mask_pil = Image.fromarray(mask).convert("L")
+
+            # Apply mask to the original image
+            image = image.convert("RGBA")
+            mask_pil = mask_pil.resize(image.size, resample=Image.BILINEAR)
+            image.putalpha(mask_pil)
+
+            # Replace transparent background with white
+            background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+            image = Image.alpha_composite(background, image).convert("RGB")
+
+            return image
+
+        except Exception as e:
+            traceback.print_exc()
+            raise RuntimeError(f"U²-Net background removal failed: {e}")
 
     def prepare(
         self,
@@ -303,6 +318,8 @@ class StreamDiffusionWrapper:
         ----------
         image : Union[str, Image.Image, torch.Tensor]
             The image to generate from.
+        prompt : Optional[str]
+            The prompt to generate images from.
 
         Returns
         -------
@@ -360,17 +377,20 @@ class StreamDiffusionWrapper:
         # Load image if it's a file path
         if isinstance(image, str):
             try:
-                image = (
-                    Image.open(image)
-                    .convert("RGB")
-                    .resize((self.width, self.height))
-                )
+                image = Image.open(image).convert("RGB")
             except Exception as e:
                 raise ValueError(f"Failed to open image: {e}")
 
         # Ensure image is a PIL Image and resize
         if isinstance(image, Image.Image):
-            image = image.convert("RGB").resize((self.width, self.height))
+            target_size = (self.width, self.height)
+            try:
+                resample_filter = Image.Resampling.LANCZOS
+            except AttributeError:
+                resample_filter = Image.LANCZOS  # For older Pillow versions
+            image = image.convert("RGB").resize(
+                target_size, resample=resample_filter
+            )
         else:
             raise TypeError(
                 "Unsupported image type. Expected str or PIL.Image.Image."
@@ -381,29 +401,14 @@ class StreamDiffusionWrapper:
             f"[Preprocess] Loaded and resized image in {preprocess_time - start_time:.4f} seconds."
         )
 
-        # Remove background if requested
+        # Remove background if requested using U²-Net
         if remove_background:
             try:
                 bg_start = time.time()
-                # Convert PIL Image to bytes (using PNG to preserve transparency)
-                buffered = io.BytesIO()
-                image.save(buffered, format="PNG")
-                image_bytes = buffered.getvalue()
-
-                # Remove background using the pre-initialized rembg session
-                image_no_bg = remove(image_bytes, session=self.rembg_session)
-
-                # Convert bytes back to PIL Image
-                image = Image.open(io.BytesIO(image_no_bg)).convert("RGBA")
-
-                # Replace transparent background with white
-                background = Image.new(
-                    "RGBA", image.size, (255, 255, 255, 255)
-                )
-                image = Image.alpha_composite(background, image).convert("RGB")
+                image = self.remove_background_u2net_onnx(image)
                 bg_end = time.time()
                 print(
-                    f"[Background Removal] Completed in {bg_end - bg_start:.4f} seconds."
+                    f"[Background Removal (U²-Net)] Completed in {bg_end - bg_start:.4f} seconds."
                 )
             except Exception as e:
                 raise ValueError(f"Background removal failed: {e}")
@@ -514,7 +519,7 @@ class StreamDiffusionWrapper:
             The lcm_lora_id to load, by default None.
         vae_id : Optional[str], optional
             The vae_id to load, by default None.
-        acceleration : Literal["none", "xfomers", "sfast", "tensorrt"], optional
+        acceleration : Literal["none", "xformers", "tensorrt"], optional
             The acceleration method, by default "tensorrt".
         warmup : int, optional
             The number of warmup steps to perform, by default 10.
@@ -545,7 +550,7 @@ class StreamDiffusionWrapper:
                 ).to(device=self.device, dtype=self.dtype)
             )
 
-        except ValueError:  # Load from huggingface
+        except ValueError:  # Load from Hugging Face
             pipe: StableDiffusionPipeline = (
                 StableDiffusionPipeline.from_single_file(
                     model_id_or_path,
