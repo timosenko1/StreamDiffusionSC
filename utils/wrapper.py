@@ -12,7 +12,7 @@ import torch
 from diffusers import AutoencoderTiny, StableDiffusionPipeline
 from PIL import Image
 from rembg import remove, new_session
-
+import onnxruntime as rt
 from streamdiffusion import StreamDiffusion
 from streamdiffusion.image_utils import postprocess_image
 
@@ -152,10 +152,14 @@ class StreamDiffusionWrapper:
 
         # Initialize rembg session once
         self.rembg_session = new_session("u2net_human_seg")
+        print(
+            "session_proveders = ",
+            self.rembg_session.inner_session.get_providers(),
+        )
 
         # Optionally, move the session's model to the desired device
         # if torch.cuda.is_available() and self.device == "cuda":
-        self.rembg_session.model.to("cuda")
+        # self.rembg_session.model.to("cuda")
         #     print("rembg model moved to GPU.")
         # else:
         #     print("rembg model using CPU.")
