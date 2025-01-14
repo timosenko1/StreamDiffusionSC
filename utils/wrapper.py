@@ -316,10 +316,10 @@ class StreamDiffusionWrapper:
         return image
 
     def preprocess_image(
-        self, 
-        image: Union[str, Image.Image], 
+        self,
+        image: Union[str, Image.Image],
         use_canny: bool = False,
-        remove_background: bool = False
+        remove_background: bool = False,
     ) -> torch.Tensor:
         """
         Preprocesses the image.
@@ -340,8 +340,12 @@ class StreamDiffusionWrapper:
         """
         # Load image if it's a file path
         if isinstance(image, str):
-            image = Image.open(image).convert("RGB").resize((self.width, self.height))
-        
+            image = (
+                Image.open(image)
+                .convert("RGB")
+                .resize((self.width, self.height))
+            )
+
         # Ensure image is a PIL Image and resize
         if isinstance(image, Image.Image):
             image = image.convert("RGB").resize((self.width, self.height))
@@ -349,19 +353,27 @@ class StreamDiffusionWrapper:
         # Remove background if requested
         if remove_background:
             try:
+                # Determine the device
+                device = torch.device(
+                    "cuda" if torch.cuda.is_available() else "cpu"
+                )
+
                 # Convert PIL Image to bytes (using PNG to preserve transparency)
                 buffered = io.BytesIO()
                 image.save(buffered, format="PNG")
                 image_bytes = buffered.getvalue()
-                
+
                 # Remove background using rembg
+                # rembg automatically utilizes the GPU if available via PyTorch
                 image_no_bg = remove(image_bytes)
-                
+
                 # Convert bytes back to PIL Image
                 image = Image.open(io.BytesIO(image_no_bg)).convert("RGBA")
-                
+
                 # Replace transparent background with white
-                background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+                background = Image.new(
+                    "RGBA", image.size, (255, 255, 255, 255)
+                )
                 image = Image.alpha_composite(background, image).convert("RGB")
             except Exception as e:
                 raise ValueError(f"Background removal failed: {e}")
@@ -370,10 +382,10 @@ class StreamDiffusionWrapper:
         if use_canny:
             # Convert PIL Image to grayscale numpy array
             image_np = np.array(image.convert("L"))
-            
+
             # Apply Canny edge detection
             edges = cv2.Canny(image_np, threshold1=100, threshold2=200)
-            
+
             # Convert edges back to PIL Image
             image = Image.fromarray(edges).convert("RGB")
 
