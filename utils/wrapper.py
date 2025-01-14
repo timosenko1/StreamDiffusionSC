@@ -154,11 +154,11 @@ class StreamDiffusionWrapper:
         self.rembg_session = new_session("u2net_human_seg")
 
         # Optionally, move the session's model to the desired device
-        if torch.cuda.is_available() and self.device == "cuda":
-            self.rembg_session.model.to("cuda")
-            print("rembg model moved to GPU.")
-        else:
-            print("rembg model using CPU.")
+        # if torch.cuda.is_available() and self.device == "cuda":
+        self.rembg_session.model.to("cuda")
+        #     print("rembg model moved to GPU.")
+        # else:
+        #     print("rembg model using CPU.")
 
         self.use_denoising_batch = use_denoising_batch
         self.use_safety_checker = use_safety_checker
@@ -354,17 +354,17 @@ class StreamDiffusionWrapper:
         # Load image if it's a file path
         if isinstance(image, str):
             try:
-                image = Image.open(image).convert("RGB")
+                image = (
+                    Image.open(image)
+                    .convert("RGB")
+                    .resize((self.width, self.height))
+                )
             except Exception as e:
                 raise ValueError(f"Failed to open image: {e}")
 
         # Ensure image is a PIL Image and resize
         if isinstance(image, Image.Image):
-            # Optional: Resize to a smaller size if speed is prioritized over quality
-            # For example, resize to 256x256 instead of 512x512
-            # Adjust as necessary
-            target_size = (self.width, self.height)
-            image = image.convert("RGB").resize(target_size, Image.ANTIALIAS)
+            image = image.convert("RGB").resize((self.width, self.height))
         else:
             raise TypeError(
                 "Unsupported image type. Expected str or PIL.Image.Image."
