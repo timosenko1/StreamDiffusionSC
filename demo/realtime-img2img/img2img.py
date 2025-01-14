@@ -122,7 +122,7 @@ class Pipeline:
         )
 
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
-        image_tensor = self.stream.preprocess_image(params.image, False, True)
+        image_tensor = self.stream.preprocess_image(params.image, False, False)
         output_image = self.stream(image=image_tensor, prompt=params.prompt)
 
         return output_image
