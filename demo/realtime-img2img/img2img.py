@@ -22,7 +22,7 @@ base_model = "stabilityai/sd-turbo"
 taesd_model = "madebyollin/taesd"
 lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
 # lora_dict = {"/home/ubuntu/models/lcm_kairon.safetensors": 1.0}
-lora_dict = {"/home/ubuntu/models/last-000010.safetensors": 1.0}
+lora_dict = {"/home/ubuntu/models/last-000015.safetensors": 1.0}
 # lora_dict = None
 
 default_prompt = "kairon, 1boy, white hair, blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style, solo"
@@ -118,7 +118,7 @@ class Pipeline:
             prompt=default_prompt,
             negative_prompt=default_negative_prompt,
             num_inference_steps=50,
-            guidance_scale=2.0,
+            guidance_scale=1.1,
         )
 
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
