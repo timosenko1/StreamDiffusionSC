@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from diffusers import AutoencoderTiny, StableDiffusionPipeline
 from PIL import Image
+from rembg import remove
 
 from streamdiffusion import StreamDiffusion
 from streamdiffusion.image_utils import postprocess_image
@@ -314,7 +315,10 @@ class StreamDiffusionWrapper:
         return image
 
     def preprocess_image(
-        self, image: Union[str, Image.Image], use_canny: bool = False
+        self,
+        image: Union[str, Image.Image],
+        use_canny: bool = False,
+        remove_background: bool = False,
     ) -> torch.Tensor:
         """
         Preprocesses the image.
@@ -324,7 +328,9 @@ class StreamDiffusionWrapper:
         image : Union[str, Image.Image]
             The image to preprocess.
         use_canny : bool, optional
-            If True, applies Canny edge detection to the image before preprocessing (default is False).
+            If True, applies Canny edge detection to the image after background removal (default is False).
+        remove_background : bool, optional
+            If True, removes the background from the image before any other preprocessing steps (default is False).
 
         Returns
         -------
@@ -342,6 +348,22 @@ class StreamDiffusionWrapper:
         # Ensure image is a PIL Image and resize
         if isinstance(image, Image.Image):
             image = image.convert("RGB").resize((self.width, self.height))
+
+        # Remove background if requested
+        if remove_background:
+            # Convert PIL Image to bytes
+            image_bytes = image.to_bytes("RGB", "jpeg")
+
+            # Remove background using rembg
+            image_no_bg = remove(image_bytes)
+
+            # Convert bytes back to PIL Image
+            image = Image.open(io.BytesIO(image_no_bg)).convert("RGBA")
+
+            # Optionally, you can replace the background with white or any other color
+            # For example, to make the background white:
+            background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+            image = Image.alpha_composite(background, image).convert("RGB")
 
         # Apply Canny edge detection if requested
         if use_canny:
