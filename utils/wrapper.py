@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from diffusers import AutoencoderTiny, StableDiffusionPipeline
 from PIL import Image
-from rembg import remove
+from rembg import remove, new_session
 
 from streamdiffusion import StreamDiffusion
 from streamdiffusion.image_utils import postprocess_image
@@ -148,6 +148,16 @@ class StreamDiffusionWrapper:
             if use_denoising_batch
             else frame_buffer_size
         )
+
+        # Initialize rembg session once
+        self.rembg_session = new_session("u2net_human_seg")
+
+        # Optionally, move the session's model to the desired device
+        if torch.cuda.is_available() and self.device == "cuda":
+            self.rembg_session.model.to("cuda")
+            print("rembg model moved to GPU.")
+        else:
+            print("rembg model using CPU.")
 
         self.use_denoising_batch = use_denoising_batch
         self.use_safety_checker = use_safety_checker
@@ -340,32 +350,33 @@ class StreamDiffusionWrapper:
         """
         # Load image if it's a file path
         if isinstance(image, str):
-            image = (
-                Image.open(image)
-                .convert("RGB")
-                .resize((self.width, self.height))
-            )
+            try:
+                image = (
+                    Image.open(image)
+                    .convert("RGB")
+                    .resize((self.width, self.height))
+                )
+            except Exception as e:
+                raise ValueError(f"Failed to open image: {e}")
 
         # Ensure image is a PIL Image and resize
         if isinstance(image, Image.Image):
             image = image.convert("RGB").resize((self.width, self.height))
+        else:
+            raise TypeError(
+                "Unsupported image type. Expected str or PIL.Image.Image."
+            )
 
         # Remove background if requested
         if remove_background:
             try:
-                # Determine the device
-                device = torch.device(
-                    "cuda" if torch.cuda.is_available() else "cpu"
-                )
-
                 # Convert PIL Image to bytes (using PNG to preserve transparency)
                 buffered = io.BytesIO()
                 image.save(buffered, format="PNG")
                 image_bytes = buffered.getvalue()
 
-                # Remove background using rembg
-                # rembg automatically utilizes the GPU if available via PyTorch
-                image_no_bg = remove(image_bytes)
+                # Remove background using the pre-initialized rembg session
+                image_no_bg = remove(image_bytes, session=self.rembg_session)
 
                 # Convert bytes back to PIL Image
                 image = Image.open(io.BytesIO(image_no_bg)).convert("RGBA")
@@ -380,19 +391,25 @@ class StreamDiffusionWrapper:
 
         # Apply Canny edge detection if requested
         if use_canny:
-            # Convert PIL Image to grayscale numpy array
-            image_np = np.array(image.convert("L"))
+            try:
+                # Convert PIL Image to grayscale numpy array
+                image_np = np.array(image.convert("L"))
 
-            # Apply Canny edge detection
-            edges = cv2.Canny(image_np, threshold1=100, threshold2=200)
+                # Apply Canny edge detection
+                edges = cv2.Canny(image_np, threshold1=100, threshold2=200)
 
-            # Convert edges back to PIL Image
-            image = Image.fromarray(edges).convert("RGB")
+                # Convert edges back to PIL Image
+                image = Image.fromarray(edges).convert("RGB")
+            except Exception as e:
+                raise ValueError(f"Canny edge detection failed: {e}")
 
         # Preprocess the image using the existing image processor
-        preprocessed = self.stream.image_processor.preprocess(
-            image, self.height, self.width
-        ).to(device=self.device, dtype=self.dtype)
+        try:
+            preprocessed = self.stream.image_processor.preprocess(
+                image, self.height, self.width
+            ).to(device=self.device, dtype=self.dtype)
+        except Exception as e:
+            raise ValueError(f"Image preprocessing failed: {e}")
 
         return preprocessed
 
