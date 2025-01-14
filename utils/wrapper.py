@@ -20,6 +20,9 @@ torch.set_grad_enabled(False)
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 
+print(torch.cuda.is_available())  # Should return True
+print(torch.cuda.get_device_name(0))  # Should display your GPU's name
+
 
 class StreamDiffusionWrapper:
     def __init__(
