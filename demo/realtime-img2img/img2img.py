@@ -94,7 +94,7 @@ class Pipeline:
             use_tiny_vae=True,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[25, 32, 40, 45],
+            t_index_list=[32, 40, 45],
             frame_buffer_size=1,
             width=params.width,
             height=params.height,
@@ -117,7 +117,7 @@ class Pipeline:
         self.stream.prepare(
             prompt=default_prompt,
             negative_prompt=default_negative_prompt,
-            num_inference_steps=50,
+            num_inference_steps=45,
             guidance_scale=1.1,
         )
 
