@@ -118,7 +118,7 @@ class Pipeline:
             prompt=default_prompt,
             negative_prompt=default_negative_prompt,
             num_inference_steps=50,
-            guidance_scale=1.2,
+            guidance_scale=2.0,
         )
 
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
