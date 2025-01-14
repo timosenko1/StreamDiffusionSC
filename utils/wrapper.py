@@ -1,6 +1,7 @@
 import gc
 import os
 import cv2
+import io
 from pathlib import Path
 import traceback
 from typing import List, Literal, Optional, Union, Dict
@@ -315,10 +316,10 @@ class StreamDiffusionWrapper:
         return image
 
     def preprocess_image(
-        self,
-        image: Union[str, Image.Image],
+        self, 
+        image: Union[str, Image.Image], 
         use_canny: bool = False,
-        remove_background: bool = False,
+        remove_background: bool = False
     ) -> torch.Tensor:
         """
         Preprocesses the image.
@@ -339,40 +340,40 @@ class StreamDiffusionWrapper:
         """
         # Load image if it's a file path
         if isinstance(image, str):
-            image = (
-                Image.open(image)
-                .convert("RGB")
-                .resize((self.width, self.height))
-            )
-
+            image = Image.open(image).convert("RGB").resize((self.width, self.height))
+        
         # Ensure image is a PIL Image and resize
         if isinstance(image, Image.Image):
             image = image.convert("RGB").resize((self.width, self.height))
 
         # Remove background if requested
         if remove_background:
-            # Convert PIL Image to bytes
-            image_bytes = image.to_bytes("RGB", "jpeg")
-
-            # Remove background using rembg
-            image_no_bg = remove(image_bytes)
-
-            # Convert bytes back to PIL Image
-            image = Image.open(io.BytesIO(image_no_bg)).convert("RGBA")
-
-            # Optionally, you can replace the background with white or any other color
-            # For example, to make the background white:
-            background = Image.new("RGBA", image.size, (255, 255, 255, 255))
-            image = Image.alpha_composite(background, image).convert("RGB")
+            try:
+                # Convert PIL Image to bytes (using PNG to preserve transparency)
+                buffered = io.BytesIO()
+                image.save(buffered, format="PNG")
+                image_bytes = buffered.getvalue()
+                
+                # Remove background using rembg
+                image_no_bg = remove(image_bytes)
+                
+                # Convert bytes back to PIL Image
+                image = Image.open(io.BytesIO(image_no_bg)).convert("RGBA")
+                
+                # Replace transparent background with white
+                background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+                image = Image.alpha_composite(background, image).convert("RGB")
+            except Exception as e:
+                raise ValueError(f"Background removal failed: {e}")
 
         # Apply Canny edge detection if requested
         if use_canny:
             # Convert PIL Image to grayscale numpy array
             image_np = np.array(image.convert("L"))
-
+            
             # Apply Canny edge detection
             edges = cv2.Canny(image_np, threshold1=100, threshold2=200)
-
+            
             # Convert edges back to PIL Image
             image = Image.fromarray(edges).convert("RGB")
 
