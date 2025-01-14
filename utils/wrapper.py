@@ -12,7 +12,6 @@ import torch
 from diffusers import AutoencoderTiny, StableDiffusionPipeline
 from PIL import Image
 from rembg import remove, new_session
-import onnxruntime as rt
 from streamdiffusion import StreamDiffusion
 from streamdiffusion.image_utils import postprocess_image
 
