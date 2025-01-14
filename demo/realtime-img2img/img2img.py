@@ -22,7 +22,7 @@ base_model = "stabilityai/sd-turbo"
 taesd_model = "madebyollin/taesd"
 lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
 # lora_dict = {"/home/ubuntu/models/lcm_kairon.safetensors": 1.0}
-lora_dict = {"/home/ubuntu/models/last.safetensors": 1.0}
+lora_dict = {"/home/ubuntu/models/last-000020.safetensors": 1.0}
 
 default_prompt = "kairon, 1boy, white hair, blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style, solo"
 default_negative_prompt = "black and white, blurry, low resolution, pixelated, pixel art, low quality, low fidelity"

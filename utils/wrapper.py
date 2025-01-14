@@ -372,7 +372,6 @@ class StreamDiffusionWrapper:
         torch.Tensor
             The preprocessed image.
         """
-        start_time = time.time()
 
         # Load image if it's a file path
         if isinstance(image, str):
@@ -396,27 +395,16 @@ class StreamDiffusionWrapper:
                 "Unsupported image type. Expected str or PIL.Image.Image."
             )
 
-        preprocess_time = time.time()
-        print(
-            f"[Preprocess] Loaded and resized image in {preprocess_time - start_time:.4f} seconds."
-        )
-
         # Remove background if requested using U²-Net
         if remove_background:
             try:
-                bg_start = time.time()
                 image = self.remove_background_u2net_onnx(image)
-                bg_end = time.time()
-                print(
-                    f"[Background Removal (U²-Net)] Completed in {bg_end - bg_start:.4f} seconds."
-                )
             except Exception as e:
                 raise ValueError(f"Background removal failed: {e}")
 
         # Apply Canny edge detection if requested
         if use_canny:
             try:
-                canny_start = time.time()
                 # Convert PIL Image to grayscale numpy array
                 image_np = np.array(image.convert("L"))
 
@@ -425,30 +413,18 @@ class StreamDiffusionWrapper:
 
                 # Convert edges back to PIL Image
                 image = Image.fromarray(edges).convert("RGB")
-                canny_end = time.time()
-                print(
-                    f"[Canny Edge Detection] Completed in {canny_end - canny_start:.4f} seconds."
-                )
+
             except Exception as e:
                 raise ValueError(f"Canny edge detection failed: {e}")
 
         # Preprocess the image using the existing image processor
         try:
-            preprocess_prep_start = time.time()
             preprocessed = self.stream.image_processor.preprocess(
                 image, self.height, self.width
             ).to(device=self.device, dtype=self.dtype)
-            preprocess_prep_end = time.time()
-            print(
-                f"[Image Processor] Preprocessing completed in {preprocess_prep_end - preprocess_prep_start:.4f} seconds."
-            )
+
         except Exception as e:
             raise ValueError(f"Image preprocessing failed: {e}")
-
-        total_time = time.time()
-        print(
-            f"[Total Preprocessing Time] {total_time - start_time:.4f} seconds."
-        )
 
         return preprocessed
 
