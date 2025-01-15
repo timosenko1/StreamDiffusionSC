@@ -23,7 +23,7 @@ taesd_model = "madebyollin/taesd"
 lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
 # lora_dict = {"/home/ubuntu/models/lcm_kairon.safetensors": 1.0}
 # lora_dict = {"/home/ubuntu/models/rembg_kairon.safetensors": 1.0}
-lora_dict = {"/home/ubuntu/models/last.safetensors": 1.0}
+lora_dict = {"/home/ubuntu/models/last-000024.safetensors": 1.0}
 # lora_dict = None
 
 default_prompt = "kairon, 1boy, white hair, blue eyes, fitted brown quilted jacket, a teal-blue scarf, cybernetic arms, sleek metallic designs, blue accents, comic style, solo"
@@ -95,7 +95,7 @@ class Pipeline:
             use_tiny_vae=True,
             device=device,
             dtype=torch_dtype,
-            t_index_list=[25, 32, 40, 45],
+            t_index_list=[10, 25, 32, 40, 45, 49],
             frame_buffer_size=1,
             width=params.width,
             height=params.height,
@@ -118,7 +118,7 @@ class Pipeline:
         self.stream.prepare(
             prompt=default_prompt,
             negative_prompt=default_negative_prompt,
-            num_inference_steps=46,
+            num_inference_steps=50,
             guidance_scale=1.1,
         )
 
