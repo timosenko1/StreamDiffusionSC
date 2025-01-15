@@ -18,7 +18,7 @@ RUN npm ci
 RUN npm run build
 
 # ================================
-# Stage 2: Setup Backend with CUDA
+# Stage 2: Setup Backend with CUDA 12.2
 # ================================
 FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04 AS backend
 
@@ -94,7 +94,12 @@ WORKDIR $HOME/app/demo/realtime-img2img
 # Install Python dependencies
 RUN pip install --no-cache-dir -U -r requirements.txt
 RUN pip install --no-cache-dir git+https://github.com/cumulo-autumn/StreamDiffusion.git@main#egg=streamdiffusion
+
+# Install ONNXRuntime with GPU support
 RUN pip install --no-cache-dir onnxruntime-gpu
+
+# Install PyTorch compatible with CUDA 12.2
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
 
 # Create and set cache directory
 RUN mkdir -p /home/user/.cache/huggingface/transformers
