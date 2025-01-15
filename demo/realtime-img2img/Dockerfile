@@ -3,14 +3,6 @@ FROM node:20-alpine AS frontend
 RUN apk add --no-cache libc6-compat git
 WORKDIR /app
 
-# Copy the required model files into the Docker image
-COPY /home/ubuntu/models/u2net_human_seg.onnx /home/user/app/models/
-COPY /home/ubuntu/models/dreamshaper_lcm.safetensors /home/user/app/models/
-COPY /home/ubuntu/models/last-000024.safetensors /home/user/app/models/
-
-# Ensure the files are accessible by the user
-RUN chown -R user:user /home/user/app/models/
-
 RUN git clone https://github.com/timosenko1/StreamDiffusionSC.git .
 
 WORKDIR /app/demo/realtime-img2img/frontend
@@ -55,6 +47,14 @@ ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
 WORKDIR $HOME/app
 
+# Copy the required model files into the Docker image
+COPY /home/ubuntu/models/u2net_human_seg.onnx /home/user/app/models/
+COPY /home/ubuntu/models/dreamshaper_lcm.safetensors /home/user/app/models/
+COPY /home/ubuntu/models/last-000024.safetensors /home/user/app/models/
+
+# Ensure the files are accessible by the user
+RUN chown -R user:user /home/user/app/models/
+
 RUN curl https://pyenv.run | bash
 ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
 ARG PYTHON_VERSION=3.10.12
@@ -65,6 +65,7 @@ RUN pyenv install $PYTHON_VERSION && \
 
 WORKDIR $HOME/app
 
+# Copy built frontend from the frontend stage
 COPY --from=frontend  --chown=user:user /app .
 
 WORKDIR $HOME/app/demo/realtime-img2img
@@ -73,6 +74,6 @@ RUN pip install --no-cache-dir -U -r requirements.txt
 RUN pip install git+https://github.com/cumulo-autumn/StreamDiffusion.git@main#egg=streamdiffusion
 # RUN python -m streamdiffusion.tools.install-tensorrt
 
-
+# Start the application
 USER user
 CMD ["python",  "main.py", "--debug", "--acceleration", "xformers"]
