@@ -47,13 +47,9 @@ ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
 WORKDIR $HOME/app
 
-# Copy the required model files into the Docker image
-COPY models/u2net_human_seg.onnx /home/user/app/models/
-COPY models/dreamshaper_lcm.safetensors /home/user/app/models/
-COPY models/last-000024.safetensors /home/user/app/models/
-
-# Ensure the files are accessible by the user
-RUN chown -R user:user /home/user/app/models/
+COPY --chown=user:user models/u2net_human_seg.onnx /home/user/app/models/
+COPY --chown=user:user models/dreamshaper_lcm.safetensors /home/user/app/models/
+COPY --chown=user:user models/last-000024.safetensors /home/user/app/models/
 
 RUN curl https://pyenv.run | bash
 ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
