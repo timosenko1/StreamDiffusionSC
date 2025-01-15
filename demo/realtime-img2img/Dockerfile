@@ -3,7 +3,8 @@ FROM node:20-alpine AS frontend
 RUN apk add --no-cache libc6-compat git
 WORKDIR /app
 
-RUN git clone https://github.com/timosenko1/StreamDiffusionSC.git .
+# Clone the repository and checkout the 'docker' branch
+RUN git clone --branch docker https://github.com/timosenko1/StreamDiffusionSC.git .
 
 WORKDIR /app/demo/realtime-img2img/frontend
 RUN npm ci
