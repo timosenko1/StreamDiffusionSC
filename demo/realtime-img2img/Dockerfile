@@ -27,6 +27,7 @@ RUN apt-get update && \
     libssl-dev \
     zlib1g-dev \
     libbz2-dev \
+    libgl1 \
     libreadline-dev \
     libsqlite3-dev \
     libncursesw5-dev \
