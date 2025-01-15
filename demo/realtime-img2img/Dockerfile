@@ -36,9 +36,12 @@ RUN apt-get update && \
     libxml2-dev \
     libxmlsec1-dev \
     libffi-dev \
-    liblzma-dev && \
+    liblzma-dev \
+    libgl1 \
+    libglib2.0-0 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 
 # Create non-root user
 RUN useradd -m -u 1000 user
