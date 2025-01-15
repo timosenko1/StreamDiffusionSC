@@ -96,7 +96,7 @@ class Pipeline:
             device=device,
             dtype=torch_dtype,
             t_index_list=[10, 25, 32, 40, 45],
-            frame_buffer_size=2,
+            frame_buffer_size=1,
             width=params.width,
             height=params.height,
             lora_dict=lora_dict,
@@ -109,8 +109,8 @@ class Pipeline:
             use_denoising_batch=True,
             cfg_type="self",
             use_safety_checker=args.safety_checker,
-            enable_similar_image_filter=True,
-            similar_image_filter_threshold=0.98,
+            # enable_similar_image_filter=True,
+            # similar_image_filter_threshold=0.98,
             engine_dir=args.engine_dir,
         )
 
@@ -119,7 +119,7 @@ class Pipeline:
             prompt=default_prompt,
             negative_prompt=default_negative_prompt,
             num_inference_steps=50,
-            guidance_scale=1.1,
+            guidance_scale=1.2,
         )
 
     def predict(self, params: "Pipeline.InputParams") -> Image.Image:
