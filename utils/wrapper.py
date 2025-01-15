@@ -1,8 +1,6 @@
 import gc
 import os
 import cv2
-import io
-import time
 from pathlib import Path
 import traceback
 from typing import List, Literal, Optional, Union, Dict
@@ -49,7 +47,7 @@ class StreamDiffusionWrapper:
         seed: int = 2,
         use_safety_checker: bool = False,
         engine_dir: Optional[Union[str, Path]] = "engines",
-        u2net_model_path: str = "/home/ubuntu/models/u2netp.onnx",  # Path to U²-Net model
+        u2net_model_path: str = "/home/ubuntu/models/u2net_human_seg.onnx",  # Path to U²-Net model
         u2net_threshold: float = 0.5,  # Threshold for mask binarization
     ):
         """

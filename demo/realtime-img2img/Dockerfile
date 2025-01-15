@@ -3,6 +3,14 @@ FROM node:20-alpine AS frontend
 RUN apk add --no-cache libc6-compat git
 WORKDIR /app
 
+# Copy the required model files into the Docker image
+COPY /home/ubuntu/models/u2net_human_seg.onnx /home/user/app/models/
+COPY /home/ubuntu/models/dreamshaper_lcm.safetensors /home/user/app/models/
+COPY /home/ubuntu/models/last-000024.safetensors /home/user/app/models/
+
+# Ensure the files are accessible by the user
+RUN chown -R user:user /home/user/app/models/
+
 RUN git clone https://github.com/timosenko1/StreamDiffusionSC.git .
 
 WORKDIR /app/demo/realtime-img2img/frontend

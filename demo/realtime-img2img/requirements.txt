@@ -12,4 +12,6 @@ peft==0.6.0
 huggingface-hub==0.19.4
 xformers; sys_platform != 'darwin' or platform_machine != 'arm64'
 markdown2
+cv2
+onnxruntime-gpu==1.20.1
 stable_fast @ https://github.com/chengzeyi/stable-fast/releases/download/v0.0.15.post1/stable_fast-0.0.15.post1+torch211cu121-cp310-cp310-manylinux2014_x86_64.whl; sys_platform=='linux'
