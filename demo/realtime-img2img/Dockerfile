@@ -99,7 +99,13 @@ RUN pip install --no-cache-dir git+https://github.com/cumulo-autumn/StreamDiffus
 RUN pip install --no-cache-dir onnxruntime-gpu
 
 # Install PyTorch compatible with CUDA 12.2
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu122 && \
+    pip install --no-cache-dir torchaudio
+
+# Alternatively, if Option 2 is preferred:
+# RUN pip install --no-cache-dir torch torchvision torchaudio \
+#     --index-url https://download.pytorch.org/whl/cu122 \
+#     --extra-index-url https://pypi.org/simple
 
 # Create and set cache directory
 RUN mkdir -p /home/user/.cache/huggingface/transformers
@@ -108,8 +114,12 @@ ENV TRANSFORMERS_CACHE=/home/user/.cache/huggingface/transformers
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 # (Optional) Suppress FutureWarnings
-# Note: Uncomment the following lines in your main.py or entry script if necessary
 # ENV PYTHONWARNINGS="ignore::FutureWarning"
+
+# Create /data/hub directory with appropriate permissions
+USER root
+RUN mkdir -p /data/hub && chown -R user:user /data/hub
+USER user
 
 # Start the application
 CMD ["python", "main.py", "--debug", "--acceleration", "xformers"]
