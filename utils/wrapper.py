@@ -6,7 +6,7 @@ from pathlib import Path
 import traceback
 from typing import List, Literal, Optional, Union, Dict
 
-import onnxruntime as ort
+# import onnxruntime as ort
 import numpy as np
 import torch
 from diffusers import AutoencoderTiny, StableDiffusionPipeline
@@ -16,7 +16,7 @@ from PIL import Image
 from streamdiffusion import StreamDiffusion
 from streamdiffusion.image_utils import postprocess_image
 
-from torchvision import transforms
+# from torchvision import transforms
 
 
 class StreamDiffusionWrapper:
