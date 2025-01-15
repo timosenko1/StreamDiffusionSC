@@ -1,20 +1,33 @@
-# build frontend with node
+# ================================
+# Stage 1: Build Frontend with Node
+# ================================
 FROM node:20-alpine AS frontend
+
+# Install dependencies
 RUN apk add --no-cache libc6-compat git
+
 WORKDIR /app
 
+# Clone the frontend repository
 RUN git clone https://github.com/timosenko1/StreamDiffusionSC.git .
 
 WORKDIR /app/demo/realtime-img2img/frontend
+
+# Install Node dependencies and build
 RUN npm ci
 RUN npm run build
 
+# ================================
+# Stage 2: Setup Backend with CUDA
+# ================================
 FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04 AS backend
+
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NODE_MAJOR=20
 
+# Install system dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
@@ -22,7 +35,6 @@ RUN apt-get update && \
     git-lfs \
     wget \
     curl \
-    # python build dependencies \
     build-essential \
     libssl-dev \
     zlib1g-dev \
@@ -40,21 +52,33 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-USER root
-
+# Create a non-root user
 RUN useradd -m -u 1000 user
+
+# Switch to the non-root user
 USER user
+
+# Set environment variables
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
+
 WORKDIR $HOME/app
 
+# Copy model files
 COPY --chown=user:user models/u2net_human_seg.onnx /home/user/app/models/
-COPY --chown=user:user models/dreamshaper_lcm.safetensors /home/user/app/models/
+COPY --chown=user:user models/dreamshaper_lcm.safetensors /home/user/app/models/dreamshaper_lcm/
 COPY --chown=user:user models/last-000024.safetensors /home/user/app/models/
 
+# Rename model file if necessary
+RUN mv /home/user/app/models/dreamshaper_lcm/dreamshaper_lcm.safetensors /home/user/app/models/dreamshaper_lcm/model.safetensors
+
+# Install pyenv and Python
 RUN curl https://pyenv.run | bash
+
 ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
+
 ARG PYTHON_VERSION=3.10.12
+
 RUN pyenv install $PYTHON_VERSION && \
     pyenv global $PYTHON_VERSION && \
     pyenv rehash && \
@@ -63,14 +87,24 @@ RUN pyenv install $PYTHON_VERSION && \
 WORKDIR $HOME/app
 
 # Copy built frontend from the frontend stage
-COPY --from=frontend  --chown=user:user /app .
+COPY --from=frontend --chown=user:user /app .
 
 WORKDIR $HOME/app/demo/realtime-img2img
 
+# Install Python dependencies
 RUN pip install --no-cache-dir -U -r requirements.txt
-RUN pip install git+https://github.com/cumulo-autumn/StreamDiffusion.git@main#egg=streamdiffusion
-# RUN python -m streamdiffusion.tools.install-tensorrt
+RUN pip install --no-cache-dir git+https://github.com/cumulo-autumn/StreamDiffusion.git@main#egg=streamdiffusion
+RUN pip install --no-cache-dir onnxruntime-gpu
+
+# Create and set cache directory
+RUN mkdir -p /home/user/.cache/huggingface/transformers
+
+ENV TRANSFORMERS_CACHE=/home/user/.cache/huggingface/transformers
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+# (Optional) Suppress FutureWarnings
+# Note: Uncomment the following lines in your main.py or entry script if necessary
+# ENV PYTHONWARNINGS="ignore::FutureWarning"
 
 # Start the application
-USER user
-CMD ["python",  "main.py", "--debug", "--acceleration", "xformers"]
+CMD ["python", "main.py", "--debug", "--acceleration", "xformers"]
