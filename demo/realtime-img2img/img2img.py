@@ -21,7 +21,7 @@ import math
 base_model = "stabilityai/sd-turbo"
 taesd_model = "madebyollin/taesd"
 lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
-lcm_model = "stabilityai/sd-turbo"
+# lcm_model = "stabilityai/sd-turbo"
 
 lcm_model = "/home/user/app/models/dreamshaper_lcm.safetensors"
 # lora_dict = {"/home/ubuntu/models/lcm_kairon.safetensors": 1.0}

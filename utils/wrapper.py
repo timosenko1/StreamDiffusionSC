@@ -1,6 +1,7 @@
 import gc
 import os
-import cv2
+
+# import cv2
 from pathlib import Path
 import traceback
 from typing import List, Literal, Optional, Union, Dict
@@ -88,10 +89,10 @@ class StreamDiffusionWrapper:
         )
 
         # Load U²-Net model
-        self.u2net_session = self.load_u2net_model(u2net_model_path)
-        print("U²-Net ONNX model loaded and ready for background removal.")
+        # self.u2net_session = self.load_u2net_model(u2net_model_path)
+        # print("U²-Net ONNX model loaded and ready for background removal.")
 
-        self.u2net_threshold = u2net_threshold
+        # self.u2net_threshold = u2net_threshold
 
         self.use_denoising_batch = use_denoising_batch
         self.use_safety_checker = use_safety_checker
@@ -123,91 +124,91 @@ class StreamDiffusionWrapper:
                 similar_image_filter_max_skip_frame,
             )
 
-    def load_u2net_model(self, model_path: str) -> ort.InferenceSession:
-        """
-        Loads the U²-Net ONNX model with GPU support.
+    # def load_u2net_model(self, model_path: str) -> ort.InferenceSession:
+    #     """
+    #     Loads the U²-Net ONNX model with GPU support.
 
-        Parameters:
-        - model_path (str): Path to the U²-Net ONNX model.
+    #     Parameters:
+    #     - model_path (str): Path to the U²-Net ONNX model.
 
-        Returns:
-        - session (ort.InferenceSession): ONNX Runtime inference session.
-        """
-        try:
-            # Initialize ONNX Runtime session with CUDA provider
-            session = ort.InferenceSession(
-                model_path,
-                providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
-            )
-            return session
-        except Exception as e:
-            traceback.print_exc()
-            raise RuntimeError(f"Failed to load U²-Net ONNX model: {e}")
+    #     Returns:
+    #     - session (ort.InferenceSession): ONNX Runtime inference session.
+    #     """
+    #     try:
+    #         # Initialize ONNX Runtime session with CUDA provider
+    #         session = ort.InferenceSession(
+    #             model_path,
+    #             providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    #         )
+    #         return session
+    #     except Exception as e:
+    #         traceback.print_exc()
+    #         raise RuntimeError(f"Failed to load U²-Net ONNX model: {e}")
 
-    def remove_background_u2net_onnx(
-        self,
-        image: Image.Image,
-    ) -> Image.Image:
-        """
-        Removes the background from an image using U²-Net ONNX model.
+    # def remove_background_u2net_onnx(
+    #     self,
+    #     image: Image.Image,
+    # ) -> Image.Image:
+    #     """
+    #     Removes the background from an image using U²-Net ONNX model.
 
-        Parameters:
-        - image (PIL.Image.Image): Input image.
+    #     Parameters:
+    #     - image (PIL.Image.Image): Input image.
 
-        Returns:
-        - Image.Image: Image with background removed.
-        """
-        try:
-            # Define the input size expected by the model
-            input_size = (320, 320)  # Adjust based on model's training
+    #     Returns:
+    #     - Image.Image: Image with background removed.
+    #     """
+    #     try:
+    #         # Define the input size expected by the model
+    #         input_size = (320, 320)  # Adjust based on model's training
 
-            # Define transformations
-            preprocess = transforms.Compose(
-                [
-                    transforms.Resize(input_size),
-                    transforms.ToTensor(),
-                    transforms.Normalize(
-                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                    ),
-                ]
-            )
+    #         # Define transformations
+    #         preprocess = transforms.Compose(
+    #             [
+    #                 transforms.Resize(input_size),
+    #                 transforms.ToTensor(),
+    #                 transforms.Normalize(
+    #                     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    #                 ),
+    #             ]
+    #         )
 
-            # Apply transformations
-            input_tensor = preprocess(image).unsqueeze(0).numpy()
+    #         # Apply transformations
+    #         input_tensor = preprocess(image).unsqueeze(0).numpy()
 
-            # Get input and output names
-            input_name = self.u2net_session.get_inputs()[0].name
-            output_name = self.u2net_session.get_outputs()[0].name
+    #         # Get input and output names
+    #         input_name = self.u2net_session.get_inputs()[0].name
+    #         output_name = self.u2net_session.get_outputs()[0].name
 
-            # Run inference
-            outputs = self.u2net_session.run(
-                [output_name], {input_name: input_tensor}
-            )
+    #         # Run inference
+    #         outputs = self.u2net_session.run(
+    #             [output_name], {input_name: input_tensor}
+    #         )
 
-            # Assuming the output is a single mask
-            mask = outputs[0].squeeze()
-            mask = (mask > self.u2net_threshold).astype(np.uint8) * 255
+    #         # Assuming the output is a single mask
+    #         mask = outputs[0].squeeze()
+    #         mask = (mask > self.u2net_threshold).astype(np.uint8) * 255
 
-            # Resize mask to original image size
-            mask = cv2.resize(mask, image.size, interpolation=cv2.INTER_LINEAR)
+    #         # Resize mask to original image size
+    #         mask = cv2.resize(mask, image.size, interpolation=cv2.INTER_LINEAR)
 
-            # Convert mask to PIL Image
-            mask_pil = Image.fromarray(mask).convert("L")
+    #         # Convert mask to PIL Image
+    #         mask_pil = Image.fromarray(mask).convert("L")
 
-            # Apply mask to the original image
-            image = image.convert("RGBA")
-            mask_pil = mask_pil.resize(image.size, resample=Image.BILINEAR)
-            image.putalpha(mask_pil)
+    #         # Apply mask to the original image
+    #         image = image.convert("RGBA")
+    #         mask_pil = mask_pil.resize(image.size, resample=Image.BILINEAR)
+    #         image.putalpha(mask_pil)
 
-            # Replace transparent background with white
-            background = Image.new("RGBA", image.size, (255, 255, 255, 255))
-            image = Image.alpha_composite(background, image).convert("RGB")
+    #         # Replace transparent background with white
+    #         background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+    #         image = Image.alpha_composite(background, image).convert("RGB")
 
-            return image
+    #         return image
 
-        except Exception as e:
-            traceback.print_exc()
-            raise RuntimeError(f"U²-Net background removal failed: {e}")
+    #     except Exception as e:
+    #         traceback.print_exc()
+    #         raise RuntimeError(f"U²-Net background removal failed: {e}")
 
     def prepare(
         self,
@@ -394,26 +395,26 @@ class StreamDiffusionWrapper:
             )
 
         # Remove background if requested using U²-Net
-        if remove_background:
-            try:
-                image = self.remove_background_u2net_onnx(image)
-            except Exception as e:
-                raise ValueError(f"Background removal failed: {e}")
+        # if remove_background:
+        #     try:
+        #         image = self.remove_background_u2net_onnx(image)
+        #     except Exception as e:
+        #         raise ValueError(f"Background removal failed: {e}")
 
-        # Apply Canny edge detection if requested
-        if use_canny:
-            try:
-                # Convert PIL Image to grayscale numpy array
-                image_np = np.array(image.convert("L"))
+        # # Apply Canny edge detection if requested
+        # if use_canny:
+        #     try:
+        #         # Convert PIL Image to grayscale numpy array
+        #         image_np = np.array(image.convert("L"))
 
-                # Apply Canny edge detection
-                edges = cv2.Canny(image_np, threshold1=100, threshold2=200)
+        #         # Apply Canny edge detection
+        #         edges = cv2.Canny(image_np, threshold1=100, threshold2=200)
 
-                # Convert edges back to PIL Image
-                image = Image.fromarray(edges).convert("RGB")
+        #         # Convert edges back to PIL Image
+        #         image = Image.fromarray(edges).convert("RGB")
 
-            except Exception as e:
-                raise ValueError(f"Canny edge detection failed: {e}")
+        #     except Exception as e:
+        #         raise ValueError(f"Canny edge detection failed: {e}")
 
         # Preprocess the image using the existing image processor
         try:
