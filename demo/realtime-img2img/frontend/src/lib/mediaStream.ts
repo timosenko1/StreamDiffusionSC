@@ -27,7 +27,7 @@ export const mediaStreamActions = {
         const constraints = {
             audio: false,
             video: {
-                width: 1024, height: 1024, deviceId: mediaDevicedID
+                width: 768, height: 768, deviceId: mediaDevicedID
             }
         };
 
@@ -76,7 +76,7 @@ export const mediaStreamActions = {
         }
         const constraints = {
             audio: false,
-            video: { width: 1024, height: 1024, deviceId: mediaDevicedID }
+            video: { width: 768, height: 768, deviceId: mediaDevicedID }
         };
         await navigator.mediaDevices
             .getUserMedia(constraints)
