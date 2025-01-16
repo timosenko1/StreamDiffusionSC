@@ -33,8 +33,8 @@ class StreamDiffusionWrapper:
         device: Literal["cpu", "cuda"] = "cuda",
         dtype: torch.dtype = torch.float16,
         frame_buffer_size: int = 1,
-        width: int = 512,
-        height: int = 512,
+        width: int = 1024,
+        height: int = 1024,
         warmup: int = 10,
         acceleration: Literal["none", "xformers", "tensorrt"] = "tensorrt",
         do_add_noise: bool = True,
@@ -49,7 +49,7 @@ class StreamDiffusionWrapper:
         seed: int = 2,
         use_safety_checker: bool = False,
         engine_dir: Optional[Union[str, Path]] = "engines",
-        u2net_model_path: str = "/home/ubuntu/models/u2netp.onnx",  # Path to U²-Net model
+        u2net_model_path: str = "/home/ubuntu/models/u2net_human_seg.onnx",  # Path to U²-Net model
         u2net_threshold: float = 0.5,  # Threshold for mask binarization
     ):
         """

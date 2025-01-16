@@ -69,7 +69,7 @@ class Pipeline:
         #     id="negative_prompt",
         # )
         width: int = Field(
-            512,
+            1024,
             min=2,
             max=15,
             title="Width",
@@ -78,7 +78,7 @@ class Pipeline:
             id="width",
         )
         height: int = Field(
-            512,
+            1024,
             min=2,
             max=15,
             title="Height",

@@ -10,8 +10,8 @@
     mediaDevices
   } from '$lib/mediaStream';
   import MediaListSwitcher from './MediaListSwitcher.svelte';
-  export let width = 512;
-  export let height = 512;
+  export let width = 1024;
+  export let height = 1024;
   const size = { width, height };
 
   let videoEl: HTMLVideoElement;
