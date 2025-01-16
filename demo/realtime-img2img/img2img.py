@@ -19,8 +19,8 @@ from PIL import Image
 import math
 
 base_model = "stabilityai/sd-turbo"
-taesd_model = "madebyollin/taesd"
-lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
+# taesd_model = "madebyollin/taesd"
+# lcm_model = "/home/ubuntu/models/dreamshaper_lcm.safetensors"
 lcm_model = "stabilityai/sd-turbo"
 # lora_dict = {"/home/ubuntu/models/lcm_kairon.safetensors": 1.0}
 # lora_dict = {"/home/ubuntu/models/rembg_kairon.safetensors": 1.0}
